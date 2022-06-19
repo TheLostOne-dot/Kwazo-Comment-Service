@@ -4,7 +4,16 @@ module.exports = (sequelize, Sequelize) => {
     {
       content: {
         type: Sequelize.STRING,
+        allowNull: false
       },
+      username: {
+        type: Sequelize.STRING,
+        allowNull: false
+      },
+      postId: {
+        type: Sequelize.INTEGER,
+        allowNull: false
+      }
     },
     {
       updatedAt: false,
