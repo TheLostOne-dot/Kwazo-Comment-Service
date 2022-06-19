@@ -1,9 +1,11 @@
 const db = require("../models/index.model");
+const jwt = require("jsonwebtoken");
+const amqp_rpc = require("../service/amqp_rpc_client");
 const Comment = db.comment;
 const Op = db.Sequelize.Op;
 
 // Create and Save a new Comment
-exports.create = (req, res) => {
+exports.create = async (req, res) => {
   // Validate request
   if (!req.body.content) {
     res.status(400).send({
@@ -11,9 +13,24 @@ exports.create = (req, res) => {
     });
     return;
   }
+
+  //Username from cookie
+  if (!req.headers.cookie) {
+    res.clearCookie("access_token");
+    res.status(401).send({
+      message: "Please login or create an account!",
+    });
+    return;
+  }
+  var token = req.headers.cookie;
+  var test = jwt.verify(token.replace("access_token=", ""), process.env.JWT_SECRET);
+
+await amqp_rpc.send(req.body.postId).then(() => {
   // Create a Comment
   const comment = {
     content: req.body.content,
+    username: test.username,
+    postId: req.body.postId,
   };
   // Save Comment in the database
   Comment.create(comment)
@@ -26,6 +43,13 @@ exports.create = (req, res) => {
           err.message || "Some error occurred while creating the comment.",
       });
     });
+})
+  .catch((err) => {
+    res.status(400).send({
+      message:
+          err.message || "Some error occurred while creating the comment.",
+    });
+  });
 };
 // Retrieve all Comments from the database.
 exports.findAll = (req, res) => {
@@ -120,6 +144,45 @@ exports.deleteAll = (req, res) => {
       res.status(500).send({
         message:
           err.message || "Some error occurred while removing all Comments.",
+      });
+    });
+};
+
+exports.deleteByUsername = (username) => {
+  var condition = username
+    ? { username: { [Op.like]: `%${username}%` } }
+    : null;
+  Comment.destroy({
+    where: condition,
+    truncate: false,
+  })
+    .then((nums) => {
+      console.log({ message: `${nums} Comments were deleted successfully!` });
+    })
+    .catch((err) => {
+      console.log({
+        message:
+          err.message || "Some error occurred while removing all comments.",
+      });
+    });
+};
+
+
+exports.deleteByPostId = (postId) => {
+  var condition = postId
+    ? { postId: { [Op.like]: `%${postId}%` } }
+    : null;
+  Comment.destroy({
+    where: condition,
+    truncate: false,
+  })
+    .then((nums) => {
+      console.log({ message: `${nums} Comments were deleted successfully!` });
+    })
+    .catch((err) => {
+      console.log({
+        message:
+          err.message || "Some error occurred while removing all comments.",
       });
     });
 };
