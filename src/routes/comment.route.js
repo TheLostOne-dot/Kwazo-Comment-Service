@@ -1,24 +1,40 @@
 module.exports = app => {
     const comments = require("../controllers/comment.controller.js");
     var router = require("express").Router();
+    const { authJwt } = require("../middleware/middleware.index");
 
     // Create a new Comment
-    router.post("/", comments.create);
+    router.post("/", [
+      authJwt.verifyToken
+    ], comments.create);
 
     // Retrieve all Comments
-    router.get("/", comments.findAll);
+    router.get("/", [
+      authJwt.verifyToken
+    ], comments.findAll);
 
     // // Retrieve a single Comment with id
-    router.get("/:id", comments.findOne);
+    router.get("/:id", [
+      authJwt.verifyToken
+    ], comments.findOne);
 
     // Update a Comment with id
-    router.put("/:id", comments.update);
+    router.put("/:id", [
+      authJwt.verifyToken,
+      authJwt.verifyUser
+    ], comments.update);
 
     // Delete a Comment with id
-    router.delete("/:id", comments.delete);
+    router.delete("/:id", [
+      authJwt.verifyToken,
+      authJwt.verifyUser
+    ], comments.delete);
 
     // Delete all Comments
-    router.delete("/", comments.deleteAll);
+    router.delete("/", [
+      authJwt.verifyToken,
+      authJwt.isAdmin
+    ], comments.deleteAll);
 
     app.use('/api/comment', router);
   };
