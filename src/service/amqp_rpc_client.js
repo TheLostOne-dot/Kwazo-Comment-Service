@@ -39,7 +39,6 @@ async function send(post_id) {
                   }
                   resolve({
                   });
-                  console.log(message);
                   setTimeout(function () {
                     connection.close();
                   }, 500);
